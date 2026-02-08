@@ -1,5 +1,7 @@
 # Network Device management (SSH, SNMP) ACL update
 
+**!! BROKE - am in the process or reworking it to use PyPI published version or nornir-validate !!**
+
 The idea behind this script is to apply SSH and SNMP management ACLs at scale across different device types without fear of locking yourself out.
 
 - Takes an input YAML file of variables for the ACLs such as name, permit/deny and source address
