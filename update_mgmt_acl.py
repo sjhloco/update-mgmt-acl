@@ -1,16 +1,15 @@
-import os
-from typing import Any, Dict, List
-import yaml
 import ipaddress
+import os
 import sys
 from collections import defaultdict
+from typing import Any, Dict, List
 
+import yaml
 from rich.console import Console
 from rich.theme import Theme
 
 from nornir_orion import orion_inv
 from nornir_tasks import NornirTask
-
 
 # ----------------------------------------------------------------------------
 # User defined Variables
@@ -200,7 +199,7 @@ class InputValidate:
 # ----------------------------------------------------------------------------
 # ENGINE: Runs the methods from the script
 # ----------------------------------------------------------------------------
-def main(inv_settings: str, no_orion: bool = no_orion):
+def main(inv_settings: str, no_orion: bool = no_orion) -> None:
     orion = orion_inv.OrionInventory()
     input_val = InputValidate(directory)
     inv_validate = orion_inv.LoadValInventorySettings()

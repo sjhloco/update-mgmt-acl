@@ -1,19 +1,19 @@
-from typing import Any, Dict, List
-import sys
-import socket
-import logging
 import difflib
 import ipaddress
+import logging
+import socket
+import sys
+from typing import Any, Dict, List
 
-from rich.console import Console
-from rich.theme import Theme
-from nornir_rich.functions import print_result
 from nornir.core.filter import F
-from nornir.core.task import Task, Result
+from nornir.core.task import Result, Task
 from nornir_jinja2.plugins.tasks import template_file
 from nornir_netmiko.tasks import netmiko_send_command, netmiko_send_config
+from nornir_rich.functions import print_result
+from rich.console import Console
+from rich.theme import Theme
 
-from nornir_validate.nr_val import validate_task
+# from nornir_validate.nr_val import validate_task
 
 
 class NornirTask:
@@ -281,7 +281,8 @@ class NornirTask:
                 backup_config=backup_config,
             )
             # 2d. VALIDATE: Runs nornir-validate to validate the ACL
-            task.run(task=validate_task, input_data=task.host["acl_val"])
+            #! Putback with proper nornir-validate
+            # task.run(task=validate_task, input_data=task.host["acl_val"])
 
     # ----------------------------------------------------------------------------
     # 3. CFG ENGINE: Engine to run main-task to apply config
