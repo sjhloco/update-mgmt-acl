@@ -1,43 +1,19 @@
-acl:
-  - name: SSH_ACCESS
-    ace:
-<<<<<<< HEAD
-      - { remark: MGMT Wired - vl80 }
-      - { permit: 10.1.80.0/24 }
-      - { permit: 10.2.80.0/24 }
-      - { remark: MGMT Wifi - prod }
-      - { permit: 172.17.128.0/20 }
-      - { remark: MGMT Citrix - DC1CTXSVR01 }
-      - { permit: 10.100.100.10/32 }
-      - { remark: SCP - SRVSFTP01 }
-      - { permit: 10.100.10.10 }
-      - { remark: MGMT VPN - DC1 and DC2 }
-      - { permit: 10.25.16.0/24 }
-      - { permit: 10.25.48.0/24 }
-      - { permit: any }
-
-  - name: SNMP_ACCESS
-    ace:
-      - { remark: Orion - SRVNPM01 SRVNPM02 }
-      - { permit: 172.25.1.168/32 }
-      - { permit: 172.25.2.230/32 }
-      - { remark: Prime - SRVFOSNCS01 }
-      - { permit: 10.100.20.10 }
-
-
-=======
-      - { remark: MGMT Orion - SRVWAPP01 SRVWAPP04 }
-      - { permit: 10.2.24.168/32 }
-      - { permit: 10.2.24.230/32 }
-      - { remark: MGMT Access - VLAN810 }
-      - { permit: 10.17.10.0/24 }}
-      - { permit: any }
-  - name: SNMP_ACCESS
-    ace:
-      - { remark: MGMT Orion - SRVWAPP01 SRVWAPP04 }
-      - { permit: 10.2.24.168/32 }
-      - { permit: 10.2.24.230/32 }
-      - { remark: MGMT Access - VLAN810 }
-      - { permit: 10.17.10.0/24 }}
-      - { permit: any }
->>>>>>> 897588972f5c807cec793098b4b8620b03311f72
+ssh:
+  - { remark: MGMT Wired - vl80 }
+  - { permit: 10.1.80.0/24 }
+  - { permit: 10.2.80.0/24 }
+  - { remark: MGMT Wifi - prod }
+  - { permit: 172.17.128.0/20 }
+  - { remark: MGMT Citrix - DC1CTXSVR01 }
+  - { permit: 10.100.100.10/32 }
+  - { remark: SCP - SRVSFTP01 }
+  - { permit: 10.100.10.10 }
+  - { remark: MGMT VPN - DC1 and DC2 }
+  - { permit: 10.25.16.0/24 }
+  - { permit: 10.25.48.0/24 }
+snmp:
+  - { remark: Orion - SRVNPM01 SRVNPM02 }
+  - { permit: 172.25.1.168/32 }
+  - { permit: 172.25.2.230/32 }
+  - { remark: Prime - SRVFOSNCS01 }
+  - { permit: 10.100.20.10 }
