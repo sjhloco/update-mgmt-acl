@@ -216,8 +216,8 @@ class InputValidate:
                             wcard_ace.append(
                                 {list(each_ace.keys())[0]: ip + " " + wcard}
                             )
-                    except Exception:
-                        print("!! What is this exception in 'format_acl_vars'")
+                    except Exception as e:
+                        print(f"!! What is this exception '{e}' in 'format_acl_vars'")
                         breakpoint()
                         mask_ace.append(each_ace)
                         wcard_ace.append(each_ace)
@@ -226,6 +226,7 @@ class InputValidate:
             pfx_acl_vars["acl"].append(dict(name=aclname, ace=each_acl))
         return dict(
             name=acl_name,
+            zone=SEC_ZONE,
             wcard=wcard_acl_vars,
             mask=mask_acl_vars,
             prefix=pfx_acl_vars,
@@ -285,13 +286,12 @@ def main() -> None:
     device = input_val.get_user_pass(args)
     nr_inv = build_inv.inventory_defaults(nr_inv, device)
 
-    #! UPTO here, the README can now be updated with extra info
-    # # 6. Render the config and adds as a group_var
-    # nr_task = NornirTask()
-    # nr_inv = nr_task.generate_acl_engine(nr_inv, acl)
+    # 4. Render the config and adds as a group_var
+    nr_task = NornirTask()
+    nr_inv = nr_task.generate_acl_engine(nr_inv, acl_vars)
 
-    # # 7. Apply the config
-    # nr_task.config_engine(nr_inv, args.get("apply"))
+    # 5. Apply the config
+    nr_task.config_engine(nr_inv, args.get("apply"))
 
 
 if __name__ == "__main__":

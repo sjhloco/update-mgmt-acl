@@ -44,7 +44,7 @@ The below table lists the changeable elements of the script, if an element is se
 The first thing to do is refine the filters to limit the inventory to only the required hosts, the filters are based on pre-defined groups (*inventory/group.yml*) and host variables (*inventory/hosts.yml*). Use `-s` (***show***) or `-sd` (***show detail***) and the appropriate filters to display what hosts the filtered inventory holds. ***You are not running any actions against devices at this stage, just the filtering the inventory***.
 
 | Filter | Description |
-| ------ | ----------- | ------- |
+| ------ | ----------- |
 | `-n` | Match ***hostname*** containing this string (OR logic upto 10 hosts encased in "" separated by a space) |
 | `-g` | Match a ***group*** or combination of groups *(ios, iosxe, nxos, wlc, asa (includes ftd))* |
 | `-l` | Match a ***physical location*** or combination of them *(DC1, DC2, etc)* |

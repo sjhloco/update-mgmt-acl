@@ -35,7 +35,7 @@ ip access-list {{ each_acl.name }}
 {% if each_ace.values() | list | first == 'any' %}
 ssh 0.0.0.0 0.0.0.0 mgmt
 {% else %}
-ssh {{ each_ace.values() | list | first }} mgmt
+ssh {{ each_ace.values() | list | first }} {{ sec_zone }}
 {% endif %}{% endif %}{% endfor %}
 
 {% for each_ace in acl_vars.acl[0].ace %}
@@ -43,7 +43,7 @@ ssh {{ each_ace.values() | list | first }} mgmt
 {% if each_ace.values() | list | first == 'any' %}
 http 0.0.0.0 0.0.0.0 mgmt
 {% else %}
-http {{ each_ace.values() | list | first }} mgmt
+http {{ each_ace.values() | list | first }} {{ sec_zone }}
 {% endif %}{% endif %}{% endfor -%}
 
 {# ############################ END of devices ################################# #}
