@@ -221,9 +221,11 @@ class InputValidate:
                         breakpoint()
                         mask_ace.append(each_ace)
                         wcard_ace.append(each_ace)
-            mask_acl_vars["acl"].append(dict(name=aclname, ace=mask_ace))
-            wcard_acl_vars["acl"].append(dict(name=aclname, ace=wcard_ace))
-            pfx_acl_vars["acl"].append(dict(name=aclname, ace=each_acl))
+            mask_acl_vars["acl"].append(dict(name=aclname, type=acl_type, ace=mask_ace))
+            wcard_acl_vars["acl"].append(
+                dict(name=aclname, type=acl_type, ace=wcard_ace)
+            )
+            pfx_acl_vars["acl"].append(dict(name=aclname, type=acl_type, ace=each_acl))
         return dict(
             name=acl_name,
             zone=SEC_ZONE,
@@ -232,9 +234,9 @@ class InputValidate:
             prefix=pfx_acl_vars,
         )
 
-    # # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     # 3. USER_PASS: Gathers username/password checking various input options.
-    # # ----------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------
     def get_user_pass(self, args: dict[str, Any]) -> dict[str, Any]:
         # USER: Check for username in this order: args (-u), env var, default_username (admin)
         device = {}

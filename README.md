@@ -1,10 +1,8 @@
 # Network Device management (SSH, SNMP) ACL update
 
-**!! BROKE - am in the process or reworking it to use PyPI published version or nornir-validate !!**
+The idea behind this script is to update the SSH management ACL at scale across different device types without fear of locking yourself out. For NXOS and IOS-XE it is also possible to update the SNMP ACL in the same manner.
 
-The idea behind this script is to apply SSH and/or SNMP management ACLs at scale across different device types without fear of locking yourself out.
-
-- Supports Cisco ASA, NXOS and IOS-XE. For the later you must use extended ACLs as [Cisco IOS changes the order of standard ACLs](https://community.cisco.com/t5/switching/access-list-wrong-order/td-p/3070419/highlight/true/page/2) which breaks the validation
+- Supports Cisco ASA, NXOS and IOS-XE (must use extended ACLs as [Cisco IOS changes the order of standard ACLs](https://community.cisco.com/t5/switching/access-list-wrong-order/td-p/3070419/highlight/true/page/2) which breaks the validation)
 - Takes an input YAML file of *ssh* and/or *snmp* dictionaries that hold the ACL entries (permit/deny/remark and source address, destination is implicitly any)
 - The script only updates the ACLs entries, these ACLs must already be assigned for their purpose (for example ssh ACL to the VTY lines)
 - After ACL application the configuration is validated (just reports, does not rollback) and SSH access tested before closing the SSH connection (if SSH fails rollback is invoked)

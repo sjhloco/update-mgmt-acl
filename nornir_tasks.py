@@ -19,10 +19,7 @@ from rich.theme import Theme
 if TYPE_CHECKING:
     from nornir.core import Nornir
 
-from nornir_validate import (
-    print_result_val,
-    validate,
-)
+from nornir_validate import validate
 
 
 class NornirTask:
@@ -116,6 +113,27 @@ class NornirTask:
         config.extend(self._list_of_cmds(config2))
         return config
 
+    # NR_VAL: Creates nornir-validate desired_state
+    def _create_val_acl(
+        self, grp: str, acl_pfx: dict[str, Any], sec_zone: str
+    ) -> dict[str, Any]:
+        nr_val_ds = {}
+
+        for each_acl in acl_pfx["acl"]:
+            if grp == "asa" and each_acl["type"] == "ssh":
+                # Filter out remarks and format ACEs
+                tmp_acl = []
+                for each_ace in each_acl["ace"]:
+                    ace_key = next(iter(each_ace.keys()))
+                    if ace_key != "remark":
+                        ace_value = each_ace[ace_key]
+                        tmp_acl.append({ace_key: f"{sec_zone} - {ace_value}"})
+                nr_val_ds["ssh"] = {"ace": tmp_acl}
+                nr_val_ds["http"] = {"ace": tmp_acl}
+            elif grp != "asa":
+                nr_val_ds[each_acl["name"]] = {"ace": each_acl["ace"]}
+        return nr_val_ds
+
     # ----------------------------------------------------------------------------
     # 4a. GENERATE: Creates config, show cmds, delete cmds and adds validate input data
     # ----------------------------------------------------------------------------
@@ -125,7 +143,7 @@ class NornirTask:
         os_type: str,
         acl_name: list[str],
         acl: dict[str, Any],
-        val_acl: dict[str, Any],
+        acl_pfx: dict[str, Any],
         sec_zone: str,
     ) -> None:
         nr_inv = nr_inv.filter(F(name=list(nr_inv.inventory.hosts.keys())[0]))
@@ -136,7 +154,7 @@ class NornirTask:
             sec_zone=sec_zone,
         )
         # Prints the per-group config (what was rendered by template)
-        print_result(config, vars=["result"])
+        print_result(config, vars=["result"], line_breaks=True, print_empty_task=False)
         # Creates host_vars for config (list of each ACL) and commands for show and delete ACLs
         for grp in os_type.split("/"):
             nr_inv.inventory.groups[grp]["config"] = (
@@ -145,8 +163,11 @@ class NornirTask:
             cmds = self._show_del_cmd(os_type, acl_name)
             nr_inv.inventory.groups[grp]["show_cmd"] = cmds["show"]
             nr_inv.inventory.groups[grp]["delete_cmd"] = cmds["del"]
-            # VAL: Adds prefix ACL to be used for the nornir-validate file
-            nr_inv.inventory.groups[grp]["acl_val"] = {"groups": {grp: val_acl}}
+            # VAL: Uses the prefix ACL to create the nornir-validate desired state
+            nr_val_ds = self._create_val_acl(grp, acl_pfx, sec_zone)
+            nr_inv.inventory.groups[grp]["nr_val_ds"] = {
+                "groups": {grp: {"system": {"mgmt_acl": nr_val_ds}}}
+            }
 
     # ----------------------------------------------------------------------------
     # DIFF: Finds the differences between current device ACLs and templated ACLs (- is removed, + is added)
@@ -161,10 +182,13 @@ class NornirTask:
 
         for each_sw_acl, each_tmpl_acl in zip(sw_acl, tmpl_acl, strict=False):
             # Creates a new ACL with just the ACL name to hold the differences
-            if "access-list" in each_tmpl_acl.splitlines()[0]:
+            if len(each_tmpl_acl) == 0:  # Catch empty ACLs
+                tmp_diff_list = [""]
+            elif "access-list" in each_tmpl_acl.splitlines()[0]:
                 tmp_diff_list = [each_tmpl_acl.splitlines()[0]]
             else:  # ASAs dont have ACL name
                 tmp_diff_list = [""]
+
             # Creates a list of common elements between and differences between the ACLs (replace removes '  ' after deny in ACLs)
             diff = list(
                 difflib.ndiff(
@@ -187,6 +211,7 @@ class NornirTask:
                     tmp_diff_list.append(each_diff.replace("\n", ""))
             if len(tmp_diff_list) != 1:
                 acl_diff.append(("\n").join(tmp_diff_list) + "\n")
+        # Return result
         if len(acl_diff) == 0:
             return_result = Result(
                 host=task.host, result="✅  No differences between configurations"
@@ -278,7 +303,9 @@ class NornirTask:
         # ASA needs to remove non access based info from ssh and http cmds
         if task.host.dict()["groups"][0] == "asa":
             backup_acl_config = self._format_asa(backup_acl_config)
-
+        # FAILSAFE: If no ACL config uses backup_acl_config to stop any changes being made
+        if task.host["config"] == [""]:
+            task.host["config"] = backup_acl_config
         # 2b. DIFF: Splits into a list of ACLs and uses them to gather differences
         acl_diff = task.run(
             name="ACL differences (- remove, + add)",
@@ -300,24 +327,19 @@ class NornirTask:
                 task, task.host["config"], backup_acl_config
             )
             task.run(
+                name="Applying ACL",
                 task=self._apply_acl,
                 acl_config=acl_config,
                 backup_config=backup_config,
             )
 
             # 2d. VALIDATE: Runs nornir-validate to validate the ACL
-            #! Putback with proper nornir-validate
-            # Install nornir validate
-            # install my nornir rich - am already using nornir_rich anyway
-            # Run task and see what get back, as need to decide how print - Guess print compliance or full report if not
-            # task.run(task=validate_task, input_data=task.host["acl_val"])
-
-            # result = self.nr_inv.run(
-            #     name=f"{'Compliance Report'}",
-            #     task=validate,
-            #     input_data=data["input_data"],
-            #     print_report=True,
-            # )
+            task.run(
+                name="Validating ACL",
+                task=validate,
+                input_data=task.host["nr_val_ds"],
+                print_report=True,
+            )
 
     # ----------------------------------------------------------------------------
     # 5. CFG ENGINE: Engine to run main-task to apply config
@@ -332,4 +354,9 @@ class NornirTask:
                 "[dark_blue][b] **** ⚠️  DRY_RUN=FALSE:[/b] If there are ACL differences the configuration will be applied [b]****[/b][/dark_blue]"
             )
         result = nr_inv.run(task=self.task_engine, dry_run=dry_run)
-        print_result(result, vars=["result"])
+        print_result(
+            result,
+            vars=["result"],
+            line_breaks=True,
+            print_empty_task=False,
+        )
