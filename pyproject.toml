@@ -1,10 +1,16 @@
 [project]
 name = "update-mgmt-acl"
 version = "0.1.0"
-description = "Add your description here"
+description = "Update SSH managment ACLs"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "nornir>=3.5.0",
+    "nornir-netmiko>=1.0.1",
+    "nornir-rich",
+    "nornir-validate>=0.3.2",
+    "pyaml>=26.2.1",
+]
 
 [dependency-groups]
 dev = [
@@ -67,3 +73,6 @@ convention = "google"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+
+[tool.uv.sources]
+nornir-rich = { git = "https://github.com/sjhloco/nornir_rich", branch = "per_panel_var" }

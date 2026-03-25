@@ -2,10 +2,10 @@
 
 The idea behind this script is to update the SSH management ACL at scale across different device types without fear of locking yourself out. For NXOS and IOS-XE it is also possible to update the SNMP ACL in the same manner.
 
-- Supports Cisco ASA, NXOS and IOS-XE (must use extended ACLs as [Cisco IOS changes the order of standard ACLs](https://community.cisco.com/t5/switching/access-list-wrong-order/td-p/3070419/highlight/true/page/2) which breaks the validation)
-- Takes an input YAML file of *ssh* and/or *snmp* dictionaries that hold the ACL entries (permit/deny/remark and source address, destination is implicitly any)
-- The script only updates the ACLs entries, these ACLs must already be assigned for their purpose (for example ssh ACL to the VTY lines)
-- After ACL application the configuration is validated (just reports, does not rollback) and SSH access tested before closing the SSH connection (if SSH fails rollback is invoked)
+- Supports Cisco ASA, NXOS and IOS-XE (must use extended ACLs as [Cisco IOS changes the order of standard ACLs](https://community.cisco.com/t5/switching/access-list-wrong-order/td-p/3070419/highlight/true/page/2) breaks the validation)
+- Takes an input YAML file of *ssh* and/or *snmp* dictionaries that hold ACL entries of permit/deny/remark and a source prefix (destination is implicitly any)
+- The script only updates the ACLs entries, the ACL must already be assigned for to its purpose (ssh ACL to the VTY lines)
+- After the ACL configuration is applied SSH access is tested before closing the SSH connection, this allows for ACL rollback if SSH fails
 
 ## Installation and Variables
 
@@ -26,12 +26,12 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-The below table lists the changeable elements of the script, if an element is set via multiple methods the order of preference is ***runtime flag >> environment variable >> script variable***.
+The below table lists the changeable elements of the script, if an element is set via multiple methods the order of preference is *runtime flag >> environment variable >> script variable*.
 
 | Element | Runtime flag | Environment variable | Default | Information |
 | ------- | ------------ | -------------------- | ------- | ----------- |
 | Base directory | n/a | BASE_DIRECTORY | working directory | Location where the input file can be found |
-| Username | -u/--username | DEVICE_USER | admin | Username for all devices |
+| Username | -u | DEVICE_USER | admin | Username for all devices |
 | Password | n/a | DEVICE_PWORD | n/a | Password for all devices, if the env var is not set prompts for a password at runtime |
 | SSH ACL | n/a | SSH_ACLNAME | SSH_ACCESS | Name of the SSH ACL (IOS-XE, NXOS) |
 | SNMP ACL | n/a | SNMP_ACLNAME | SNMP_ACCESS | Name of the SNMP ACL (IOS-XE, NXOS) |
@@ -39,7 +39,7 @@ The below table lists the changeable elements of the script, if an element is se
 
 ## Filtering the inventory
 
-The first thing to do is refine the filters to limit the inventory to only the required hosts, the filters are based on pre-defined groups (*inventory/group.yml*) and host variables (*inventory/hosts.yml*). Use `-s` (***show***) or `-sd` (***show detail***) and the appropriate filters to display what hosts the filtered inventory holds. ***You are not running any actions against devices at this stage, just the filtering the inventory***.
+The first thing to do is refine the filters to limit the inventory to only the required hosts, the filters are based on pre-defined groups (*inventory/group.yml*) and host variables (*inventory/hosts.yml*). Use `-s` (***show***) or `-sd` (***show detail***) and the appropriate filters to display what hosts the filtered inventory holds. *You are not running any actions against devices at this stage, just the filtering the inventory*.
 
 | Filter | Description |
 | ------ | ----------- |
@@ -60,7 +60,7 @@ $ python update_mgmt_acl.py -g ios -s
 
 ## Input File
 
-The input file has a ***ssh*** and/or ***snmp*** dictionary with the keys being the permissions (*remark*, *permit* or *deny*) and the values the source addresses (*x.x.x.x* (a /32), *x.x.x.x/x* or *any*). The destination is implicitly the device as the ACL is for SNMP or SSH access to the device the ACL is applied on.
+The input file has a ***ssh*** and/or ***snmp*** dictionary with the keys being the permissions (*remark*, *permit* or *deny*) and the values the source addresses (*x.x.x.x* (a /32), *x.x.x.x/x* or *any*). The destination is *any* as it is implicitly the device as the ACL is for SNMP or SSH access to the device the ACL is applied on.
 
 ```yaml
 ssh:
@@ -78,7 +78,7 @@ Environment variables *SSH_ACLNAME*, *SNMP_ACLNAME* and *ASA_ZONE* define the AC
 
 ## Running the script
 
-Environment variables are optional as all have default values, the one exception is the password which you'll be prompted for if not set.
+Environment variables are optional as all have default values, you will be prompted for the password at run time if it is not set.
 
 ```bash
 export BASE_DIRECTORY="my_folder"
@@ -99,10 +99,10 @@ First run the script in ***dry_run*** mode to print the templated configuration 
 
 ```bash
 python update_mgmt_acl.py -u test_user -g asa -f acl_input_data.yml
-python update_mgmt_acl.py -du test_user -g asa -f acl_input_data.yml -a
+python update_mgmt_acl.py -u test_user -g asa -f acl_input_data.yml -a
 ```
 
-To guard against locking oneself out of the devices (as we are changing the SSH ACL) once the ACL is applied the the connection to the device is kept open whilst a telnet on port 22 is done and the changes reverted if this fails. A further post-test validation is done on task completion using *nornir-validate* to produce a compliance report if the *actual_state* and *desired_state* do not match (only reports, does not revert the config).
+To guard against locking yourself out of the devices (as we are changing the SSH ACL) once the ACL is applied the the connection to the device is kept open whilst a telnet on port 22 is done and the changes reverted if this fails. A further post-test validation is done on task completion using [nornir-validate](https://pypi.org/project/nornir-validate/) producing a compliance report of the *actual_state* versus the *desired_state*.
 
 ![example](https://user-images.githubusercontent.com/33333983/204497062-10c959cd-1d10-408e-946e-699a0922a4f2.gif)
 
@@ -119,6 +119,8 @@ The template syntax for all device types is in the one file with conditional ren
 | asa | `asa` | Subnet mask based management interface access (SSH and HTTP) |
 
 ## Unit testing
+
+**NEEDS to be updated**
 
 *Pytest* unit testing is split into 2 separate scripts.
 
